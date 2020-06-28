@@ -47,7 +47,7 @@ Make sure you rename your file to `.conf`. Then you can start your VPN like you 
 
 ### Bash terminal
 
-nano .bashrc
+vi .bashrc
 erase everything inside it (or better yet, make a backup of it cause that's a good habit: `cp ~/.bashrc ~/.bashrc.bak`)
 Copy this into your .bashrc file:
 
@@ -62,7 +62,7 @@ case $- in
       *) return;;
 esac
 
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:~/.local/bin:/snap/bin:$PATH
+export PATH=~/.local/bin:/snap/bin:/usr/sandbox/:/usr/local/bin:/usr/bin:/bin:/usr/local/games:/usr/games:/usr/share/games:/usr/local/sbin:/usr/sbin:/sbin:$PATH
 
 # don't put duplicate lines or lines starting with space in the history.
 # See bash(1) for more options
@@ -72,8 +72,8 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=-1
+HISTFILESIZE=-1
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -112,8 +112,13 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 
+# Prompt string one of low privilege user
+PSU="\[\033[38;5;118m\]\342\224\214\342\224\200\$([[ \$(/opt/vpnbash.sh) == *\"10.\"* ]] && echo \"[\[\033[38;5;33m\]\$(/opt/vpnserver.sh)\[\033[38;5;118m\]]\342\224\200[\[\033[1;37m\]\$(/opt/vpnbash.sh)\[\033[38;5;118m\]]\342\224\200\")[\033[38;5;231m\]\u\[\033[01;33m\]@\[\033[38;5;33m\]\h\[\033[38;5;118m\]]\342\224\200[\[\033[38;5;231m\]\w\[\033[38;5;118m\]]\n\[\033[38;5;118m\]\342\224\224\342\224\200\342\224\200\342\225\274 \[\033[0m\]\[\e[01;33m\]\\$ \[\e[0m\]"
+# Prompt string one of root user
+PSR="\[\033[38;5;196m\]\342\224\214\342\224\200\$([[ \$(/opt/vpnbash.sh) == *\"10.\"* ]] && echo \"[\[\033[38;5;33m\]\$(/opt/vpnserver.sh)\[\033[38;5;196m\]]\342\224\200[\[\033[1;37m\]\$(/opt/vpnbash.sh)\[\033[38;5;196m\]]\342\224\200\")[\033[38;5;196m\]root\[\033[01;33m\]@\[\033[38;5;33m\]\h\[\033[38;5;196m\]]\342\224\200[\[\033[1;37m\]\w\[\033[38;5;196m\]]\n\[\033[38;5;196m\]\342\224\224\342\224\200\342\224\200\342\225\274 \[\033[0m\]\[\e[01;33m\]\\$ \[\e[0m\]"
+
 if [ "$color_prompt" = yes ]; then
-    PS1="\[\033[0;31m\]\342\224\214\342\224\200\$([[ \$? != 0 ]] && echo \"[\[\033[0;31m\]\342\234\227\[\033[0;37m\]]\342\224\200\")[$(if [[ ${EUID} == 1 ]]; then echo '\[\033[01;31m\]root\[\033[01;33m\]☺\[\033[01;96m\]\h'; else echo '\[\033[0;39m\]\u\[\033[01;33m\]☺\[\033[01;96m\]\h'; fi)\[\033[0;31m\]]\342\224\200[\[\033[0;32m\]\w\[\033[0;31m\]]\n\[\033[0;31m\]\342\224\224\342\224\200\342\224\200\342\225\274 \[\033[0m\]\[\e[01;33m\]\\$\[\e[0m\]"
+    if [[ ${EUID} == 0 ]] ; then PS1=$PSR ; else PS1=$PSU ; fi
 else
     PS1='┌──[\u@\h]─[\w]\n└──╼ \$ '
 fi
@@ -138,7 +143,8 @@ unset color_prompt force_color_prompt
 # If this is an xterm set the title to user@host:dir
 case "$TERM" in
 xterm*|rxvt*)
-    PS1="\[\033[1;32m\]\342\224\200\$([[ \$(/opt/vpnbash.sh) == *\"10.\"* ]] && echo \"[\[\033[1;34m\]\$(/opt/vpnserver.sh)\[\033[1;32m\]]\342\224\200[\[\033[1;37m\]\$(/opt/vpnbash.sh)\[\033[1;32m\]]\342\224\200\")[\[\033[1;37m\]\u\[\033[01;32m\]@\[\033[01;34m\]\h\[\033[1;32m\]]\342\224\200[\[\033[1;37m\]\w\[\033[1;32m\]]\\$\[\e[0m\] "
+    # PS1="\[\033[1;32m\]\342\224\214\342\224\200\$([[ \$? != 0 ]] && echo \"[\[\033[1;32m\]\342\234\227\[\033[0;37m\]]\342\224\200\")[$(if [[ ${EUID} == 0 ]]; then echo '\[\033[01;31m\]root\[\033[01;33m\]@\[\033[01;96m\]\h'; else echo '\[\033[1;37m\]\u\[\033[01;33m\]@\[\033[01;34m\]\h'; fi)\[\033[1;32m\]]\342\224\200[\[\033[1;37m\]\w\[\033[1;32m\]]\n\[\033[1;32m\]\342\224\224\342\224\200\342\224\200\342\225\274 \[\033[0m\]\[\e[01;33m\]\\$ \[\e[0m\]"
+    if [[ ${EUID} == 0 ]] ; then PS1=$PSR ; else PS1=$PSU ; fi
     ;;
 *)
     ;;
@@ -166,7 +172,6 @@ alias _='sudo'
 alias _i='sudo -i'
 alias please='sudo'
 alias fucking='sudo'
-alias chuck_norris_says='sudo'
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
@@ -194,10 +199,6 @@ Then reload your bashrc file:
 `source ~/.bashrc`
 
 > NOTE: Once you are connected to the HTB vpn, you'll see your IP and other info in your termianl. Otherwise, it'll just show your username/host and current working directory.
-
-> NOTE 2: Pwnbox now has an **updated** terminal. This is purely by choice so if you want to use what Pwnbox has, replace the "PS1" line above that has "xterm*|rxvt*)..." with this new *PS1* output:
-
-`\[\033[1;32m\]\342\224\200$([[ $(/opt/vpnbash.sh) == *"10."* ]] && echo "[\[\033[1;34m\]$(/opt/vpnserver.sh)\[\033[1;32m\]]\342\224\200[\[\033[1;37m\]$(/opt/vpnbash.sh)\[\033[1;32m\]]\342\224\200")[\[\033[1;37m\]\u\[\033[01;32m\]@\[\033[01;34m\]\h\[\033[1;32m\]]\342\224\200[\[\033[1;37m\]\w\[\033[1;32m\]]\$\[\e[0m\]`
 
 ### Powershell terminal (optional)
 
